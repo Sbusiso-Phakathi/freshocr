@@ -285,12 +285,13 @@ def extract_overberg_data(text, start, end):
     if match:
         extracted_text = match.group(1).strip()
         print(extracted_text)
-        item_pattern = re.compile(r'([A-Za-z0-9\s]+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)', re.IGNORECASE)
+        item_pattern = re.compile(r'([A-Za-z0-9\s]+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)',re.DOTALL | re.IGNORECASE)
         data = []
 
         for line in extracted_text.split("\n"):
             match = item_pattern.match(line)
             if match:
+                print(match.groups())
                 a, b, c, d = match.groups()
                 data.append([None, a, None, None, None, None, b, c, d])
             else:
