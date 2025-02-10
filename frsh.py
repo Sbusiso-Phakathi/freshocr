@@ -281,8 +281,10 @@ def extract_overberg_data(text, start, end):
     pattern = re.compile(rf'{re.escape(start)}\s*\n(.*?)\n\s*{re.escape(end)}', re.DOTALL | re.IGNORECASE)
     match = pattern.search(text)
 
+    print(text)
     if match:
         extracted_text = match.group(1).strip()
+        print(extracted_text)
         item_pattern = re.compile(r'([A-Za-z0-9\s]+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)', re.IGNORECASE)
         data = []
 
@@ -296,10 +298,9 @@ def extract_overberg_data(text, start, end):
                 if charge_match:
                     print(charge_match.groups())
                     scode, num1, description, num2, num3, dsds = charge_match.groups()
-                    branch = re.search(r'Branch\s+(\S+)', text)
-                    silo = branch.group(1) if branch else None
                     lld = description.split(" ")
-                    data.append([scode, description, lld[0], lld, num1, num3, dsds, None, None, silo if num3 else None])
+                    silo = lld[-1]
+                    data.append([scode, description, lld[0], silo, num1, num3, dsds, None, None, silo if num3 else None])
                 # else:
                 #     data.append([None, line, None, None, None, None])
 
