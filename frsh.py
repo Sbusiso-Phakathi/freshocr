@@ -225,7 +225,7 @@ def extract_afgri_data(text, start, end):
 
     if match:
         extracted_text = match.group(1).strip().replace(",", "")
-        item_pattern = re.compile(r'(\d+)\s+([A-Za-z0-9\s\-]+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)', re.IGNORECASE)
+        item_pattern = re.compile(r'(\d+\s+\d+\.\d+)\s+(\d+)\s+([A-Za-z0-9\s\-]+)\s+([\d,.]+)\s+([\d,.]+)\s+([\d,.]+)', re.IGNORECASE)
         data = []
 
         for line in extracted_text.split("\n"):
@@ -277,6 +277,36 @@ def extract_bkb_data(text, start, end):
 
     return pd.DataFrame()
 
+def extract_overberg_data(text, start, end):
+    pattern = re.compile(rf'{re.escape(start)}\s*\n(.*?)\n\s*{re.escape(end)}', re.DOTALL | re.IGNORECASE)
+    match = pattern.search(text)
+
+    if match:
+        extracted_text = match.group(1).strip()
+        item_pattern = re.compile(r'([A-Za-z0-9\s]+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)', re.IGNORECASE)
+        data = []
+
+        for line in extracted_text.split("\n"):
+            match = item_pattern.match(line)
+            if match:
+                a, b, c, d = match.groups()
+                data.append([None, a, None, None, None, None, b, c, d])
+            else:
+                charge_match = re.match(r'(\d+\s+\d+\.\d+)\s+(\d+)\s+([A-Za-z0-9\s\-]+)\s+([\d,.]+)\s+([\d,.]+)\s+([\d,.]+)', line)
+                if charge_match:
+                    print(charge_match.groups())
+                    scode, num1, description, num2, num3, dsds = charge_match.groups()
+                    branch = re.search(r'Branch\s+(\S+)', text)
+                    silo = branch.group(1) if branch else None
+                    lld = description.split(" ")
+                    data.append([scode, description, lld[0], lld, num1, num3, dsds, None, None, silo if num3 else None])
+                # else:
+                #     data.append([None, line, None, None, None, None])
+
+        return pd.DataFrame(data, columns=["Stock Code", "Description", "Crop", "Grade", "Quantity", "Rate", "Sub-Total", "VAT", "Total", "Cost Type"])
+
+    return pd.DataFrame()
+
 # Streamlit UI
 st.title("Extract Structured Data from PDFs")
 
@@ -284,7 +314,7 @@ st.title("Extract Structured Data from PDFs")
 uploaded_files = st.file_uploader("Upload PDF files", type=["pdf"], accept_multiple_files=True)
 
 # Choose processing type
-data_type = st.radio("Select the data type to extract:", ["AFGRI", "BKB"])
+data_type = st.radio("Select the data type to extract:", ["AFGRI", "BKB", "OVERBERG"])
 
 if uploaded_files:
     start = st.text_input("Enter start pattern for extraction")
@@ -298,6 +328,8 @@ if uploaded_files:
 
             if data_type == "AFGRI":
                 df = extract_afgri_data(text, start, end)
+            elif data_type == "OVERBERG":
+                df = extract_overberg_data(text, start, end)
             else:
                 df = extract_bkb_data(text, start, end)
 
