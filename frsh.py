@@ -292,10 +292,10 @@ def extract_overberg_data(text, start, end):
             match = item_pattern.match(line)
             if match:
                 print(match.groups())
-                a, b, c, d = match.groups()
+                a, b, c, d,t,y = match.groups()
                 data.append([None, a, None, None, None, None, b, c, d])
             else:
-                charge_match = re.match(r'(\d+\s+\d+\.\d+)\s+(\d+)\s+([A-Za-z0-9\s\-]+)\s+([\d,.]+)\s+([\d,.]+)\s+([\d,.]+)', line)
+                charge_match = re.match(r'(\d{1,3}(?:[ ,]?\d{3})*(?:\.\d+)?)\s+(\d+)\s+([A-Za-z0-9\s\-]+)\s+([\d,.]+)\s+(\d{1,3}(?:[ ,]?\d{3})*(?:\.\d+)?)\s+(\d{1,3}(?:[ ,]?\d{3})*(?:\.\d+)?)', line)
                 if charge_match:
                     print(charge_match.groups())
                     scode, num1, description, num2, num3, dsds = charge_match.groups()
