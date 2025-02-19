@@ -523,9 +523,12 @@ def extract_bkb_data(text, start, end):
 
         with col2:
             selected_col2 = st.multiselect(f"Select Attribute Item (Row {i+1}):", tt, key=f"col2_{i}")
-            selected_indices = [tt.index(item) for item in selected_col2]
 
-            if selected_col2:
+            ff = []
+            selected_colw = ff.append(selected_col2[1])
+            selected_indices = [tt.index(item) for item in selected_colw]
+
+            if selected_indices:
                 for idx, item in enumerate(selected_col2):
                     # Get the next attribute item in the list
                     next_item = tt[selected_indices[0] + 1] if selected_indices[0] + 1 < len(tt) else None
