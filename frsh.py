@@ -222,28 +222,40 @@ def extract_text_from_pdf(pdf_file):
 def extract_afgri_data(text, start, end):
     pattern = re.compile(rf'{re.escape(start)}\s*\n(.*?)\n\s*{re.escape(end)}', re.DOTALL | re.IGNORECASE)
     match = pattern.search(text)
+    print(text)
 
     if match:
         extracted_text = match.group(1).strip().replace(",", "")
-        item_pattern = re.compile(r'(\d+\s+\d+\.\d+)\s+(\d+)\s+([A-Za-z0-9\s\-]+)\s+([\d,.]+)\s+([\d,.]+)\s+([\d,.]+)', re.IGNORECASE)
+        # print(match)
+
+        item_pattern = re.compile(r'(\d+)\s+([A-Za-z0-9\s\-]+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)', re.IGNORECASE)
         data = []
 
         for line in extracted_text.split("\n"):
             match = item_pattern.match(line)
+
             if match:
+                # print(match.groups())
                 a, b, c, d, e, f, g = match.groups()
-                
+
+                invoice_number = re.search(r'Invoice No[:\s]*(\S+)', text)
+                doc_date = re.search(r'Document Date[:\s]*([A-Za-z0-9\s\-]+)\s', text)
+                acc_num = re.search(r'Account No[:\s]*([A-Za-z0-9\s\-]+)\s', text)
+
                 grade_match = re.search(r'MBIC[:\s]*(\S+)', text)
                 silo_match = re.search(r'(\S+)\s+Siloco', text)
                 
+                invoice_number = invoice_number.group(1) if invoice_number else None
+                acc_num = acc_num.group(1) if acc_num else None
+                doc_date = doc_date.group(1) if doc_date else None
                 grade = grade_match.group(1) if grade_match else None
                 silo = silo_match.group(1) if silo_match else None
                 crop = b.split(" ")[-1]
                 commodity = " ".join(b.split(" ")[:2])
 
-                data.append([b, c, d, e, f, g, grade, silo, crop, commodity])
+                data.append([b, c, d, e, f, g, grade, silo, crop, commodity, invoice_number, doc_date, acc_num])
 
-        return pd.DataFrame(data, columns=["Description", "Quantity", "Unit Price", "Total (Excl.)", "VAT", "Total (Incl.)", "Grade", "Cost Type", "Crop", "Commodity"])
+        return pd.DataFrame(data, columns=["Description", "Quantity", "Unit Price", "Total (Excl.)", "VAT", "Total (Incl.)", "Grade", "Cost Type", "Crop", "Commodity", "invnum","doc_date", "acc_num"])
 
     return pd.DataFrame()
 
@@ -251,6 +263,7 @@ def extract_afgri_data(text, start, end):
 def extract_bkb_data(text, start, end):
     pattern = re.compile(rf'{re.escape(start)}\s*\n(.*?)\n\s*{re.escape(end)}', re.DOTALL | re.IGNORECASE)
     match = pattern.search(text)
+    print(text)
 
     if match:
         extracted_text = match.group(1).strip()
@@ -268,8 +281,9 @@ def extract_bkb_data(text, start, end):
                     scode, description, num1, num2, num3, dsds = charge_match.groups()
                     branch = re.search(r'Branch\s+(\S+)', text)
                     silo = branch.group(1) if branch else None
+                    silo2 = branch
                     lld = description.split(" ")
-                    data.append([scode, description, lld[0], lld[2], num1, num3, dsds, None, None, silo if num3 else None])
+                    data.append([scode, description, lld[0], lld[2], num1, num3, dsds, None, None, silo2 if num3 else None])
                 # else:
                 #     data.append([None, line, None, None, None, None])
 
@@ -281,7 +295,6 @@ def extract_overberg_data(text, start, end):
     pattern = re.compile(rf'{re.escape(start)}\s*\n(.*?)\n\s*{re.escape(end)}', re.DOTALL | re.IGNORECASE)
     match = pattern.search(text)
 
-    print(text)
     if match:
         extracted_text = match.group(1).strip()
         print(extracted_text)
@@ -291,7 +304,12 @@ def extract_overberg_data(text, start, end):
         for line in extracted_text.split("\n"):
             match = item_pattern.match(line)
             if match:
-                print(match.groups())
+                print(match.group(0))
+                print(match.group(1))
+                print(match.group(2))
+                print(match.group(3))
+        
+                # print(match.groups())
                 a, b, c, d,t,y = match.groups()
                 data.append([None, a, None, None, None, None, b, c, d])
             else:
