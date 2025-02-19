@@ -220,9 +220,213 @@ def extract_text_from_pdf(pdf_file):
 
 # Function to extract structured data for AFGRI format
 def extract_afgri_data(text, start, end):
+    import re
+
     pattern = re.compile(rf'{re.escape(start)}\s*\n(.*?)\n\s*{re.escape(end)}', re.DOTALL | re.IGNORECASE)
     match = pattern.search(text)
-    print(text)
+    tt = text.split("\n")
+
+    # col1, col2 = st.columns(2)
+    # with col1:
+    #     st.multiselect("select item: ", tt)
+    # with col2:
+    #     st.multiselect("select item: ", ["A","B","C"])
+
+
+    # Initialize session state for number of rows
+
+
+
+
+    import re, csv
+
+    # Initialize session state for number of rows
+    if "num_rows" not in st.session_state:
+        st.session_state.num_rows = 1  # Start with 1 row
+
+    # Define the list of attributes for Column 1
+    tttt = ["A", "B", "C", "D"]
+
+    # Define the list of attribute items for Column 2 (Example Data)
+
+    st.write("### Dynamic Multi-Select Table")
+
+    # Function to exclude words, find the next first word and extract text between exclusions
+    def process_text(selected_text, next_text, row_index, text):
+        words = selected_text.split(" ")  # Split text into words
+        excluded_words = st.multiselect(f"Select words to exclude (Row {row_index+1}):", words, key=f"exclude_{row_index}_{selected_text}")
+
+        if excluded_words:
+            # Join the excluded words into a phrase
+            excluded_phrase = " ".join(excluded_words)
+
+            # Find the first word of the next attribute item
+            next_first_word = next_text.split(" ")[0] if next_text else None
+
+            # Regex to find everything between excluded phrase and next first word
+            if next_first_word:
+                pattern = rf"{re.escape(excluded_phrase)}\s+(.*?)\s+{re.escape(next_first_word)}"
+                match = re.search(pattern, text)
+                if match:
+                    text_between = match.group(1)  # Extract text between the exclusions and the next word
+                else:
+                    text_between = "No text found between exclusions and next first word"
+            else:
+                text_between = "Next attribute not available"
+
+            return excluded_phrase, text_between, next_first_word
+        return None, None, None
+    
+
+    # Display existing rows
+    for i in range(st.session_state.num_rows):
+        col1, col2 = st.columns(2)
+
+        with col1:
+            attribute = st.multiselect(f"Attribute (Row {i+1}):", tttt, key=f"col1_{i}")
+
+        with col2:
+            selected_col2 = st.multiselect(f"Select Attribute Item (Row {i+1}):", tt, key=f"col2_{i}")
+            selected_indices = [tt.index(item) for item in selected_col2]
+
+            if selected_col2:
+                for idx, item in enumerate(selected_col2):
+                    # Get the next attribute item in the list
+                    next_item = tt[selected_indices[0] + 1] if selected_indices[0] + 1 < len(tt) else None
+                    excluded_phrase, text_between, next_first_word = process_text(item, next_item, i, text)
+                    if excluded_phrase:
+                        st.write(f"**Excluded Words:** {excluded_phrase}")
+                        st.write(f"**Text Between Excluded Words and Next First Word:** {text_between}")
+                        st.write(f"**First Word of Next Item:** {next_first_word}")
+
+    # Button to add a new row
+    if st.button("Add Row"):
+        st.session_state.num_rows += 1
+        st.rerun()  # Refresh the app to show the new row
+
+    csv_file = "saved_data.csv"
+    fieldnames = ["Excluded Words", "Next Word"]
+
+    if st.button(f"Save Row {i+1} to CSV"):
+                            with open(csv_file, mode="a", newline="") as f:
+                                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                                writer.writerow({"Excluded Words": excluded_phrase, "Next Word": next_first_word})
+                                st.success(f"Row {i+1} saved to CSV.")
+
+
+
+
+
+
+
+    # Initialize session state for number of rows
+    # import streamlit as st
+    # import re
+
+    # # Initialize session state for number of rows
+    # if "num_rows" not in st.session_state:
+    #     st.session_state.num_rows = 1  # Start with 1 row
+
+    # # Define the list of attributes for Column 1
+    # tttt = ["A", "B", "C", "D"]
+
+    # # Define the list of attribute items for Column 2 (Example Data)
+    # # tt = ["Alpha Beta Gamma", "Red Blue Green", "Hello World Streamlit", "Python Java C++"]
+
+    # st.write("### Dynamic Multi-Select Table")
+
+    # # Function to exclude words and find the next word after exclusion
+    # def process_text(selected_text, row_index, tt):
+    #     words = selected_text.split(" ")  # Split text into words
+    #     words2 = " ".join(tt)
+    #     excluded_words = st.multiselect(f"Select words to exclude (Row {row_index+1}):", words, key=f"exclude_{row_index}_{selected_text}")
+
+    #     if excluded_words:
+    #         # Join the excluded words into a phrase
+    #         excluded_phrase = " ".join(excluded_words)
+
+    #         # Create regex pattern to find the word after the excluded words
+    #         pattern = rf"{re.escape(excluded_phrase)}\s+(\w+)"  # Looks for a word right after the excluded phrase
+    #         match = re.search(pattern, words2)
+
+    #         if match:
+    #             next_word = match.group(1)  # Get the word after the excluded phrase
+    #         else:
+    #             next_word = "No word found after exclusion"
+
+    #         return excluded_phrase, next_word
+    #     return None, None
+
+    # # Display existing rows
+    # for i in range(st.session_state.num_rows):
+    #     col1, col2 = st.columns(2)
+
+    #     with col1:
+    #         st.multiselect(f"Attribute (Row {i+1}):", tttt, key=f"col1_{i}")
+
+    #     with col2:
+    #         selected_col2 = st.multiselect(f"Select Attribute Item (Row {i+1}):", tt, key=f"col2_{i}")
+
+    #         if selected_col2:
+    #             for item in selected_col2:
+    #                 excluded_phrase, next_word = process_text(item, i,tt)
+    #                 if excluded_phrase:
+    #                     st.write(f"**Excluded Words:** {excluded_phrase}")
+    #                     st.write(f"**Word after Excluded Words:** {next_word}")
+
+    # # Button to add a new row
+    # if st.button("Add Row"):
+    #     st.session_state.num_rows += 1
+    #     st.rerun()  # Refresh the app to show the new row
+
+
+
+
+
+
+
+
+    # if "num_rows" not in st.session_state:
+    #     st.session_state.num_rows = 1  # Start with 1 row
+
+    # # Define the list of items to select from in column 1
+    # tttt = ["A", "B", "C", "D"]
+
+    # st.write("### Dynamic Multi-Select Table")
+
+    # # Function to handle word exclusion logic
+    # def exclude_words(selected_item):
+    #     # Split the selected item by spaces (or other delimiters if needed)
+    #     words = selected_item.split(" ")
+    #     # Generate a multi-select box with the words for exclusion
+    #     excluded_words = st.multiselect("Select words to exclude:", words)
+    #     remaining_words = [word for word in words if word not in excluded_words]
+    #     return remaining_words
+
+    # # Display existing rows
+    # for i in range(st.session_state.num_rows):
+    #     col1, col2 = st.columns(2)
+        
+    #     with col1:
+    #         st.multiselect(f"Attribute (Row {i+1}):", tttt, key=f"col1_{i}")
+        
+    #     with col2:
+    #         selected_col2 = st.multiselect(f"Select Attribute Item (Row {i+1}):", tt, key=f"col2_{i}")
+    #         if selected_col2:
+    #             # For each selection in col2, split and allow word exclusion
+    #             for item in selected_col2:
+    #                 remaining_words = exclude_words(item)
+    #                 if remaining_words:
+    #                     st.write(f"Remaining words for {item}: {', '.join(remaining_words)}")
+    #                 else:
+    #                     st.write(f"All words in {item} were excluded.")
+
+    # # Button to add a new row
+    # if st.button("Add Row"):
+    #     st.session_state.num_rows += 1
+    #     st.rerun()  # Refresh the app to show the new row
+
+
 
     if match:
         extracted_text = match.group(1).strip().replace(",", "")
@@ -230,8 +434,10 @@ def extract_afgri_data(text, start, end):
 
         item_pattern = re.compile(r'(\d+)\s+([A-Za-z0-9\s\-]+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)', re.IGNORECASE)
         data = []
+        
 
         for line in extracted_text.split("\n"):
+           
             match = item_pattern.match(line)
 
             if match:
@@ -261,9 +467,89 @@ def extract_afgri_data(text, start, end):
 
 # Function to extract structured data for BKB format
 def extract_bkb_data(text, start, end):
+    import re, csv
     pattern = re.compile(rf'{re.escape(start)}\s*\n(.*?)\n\s*{re.escape(end)}', re.DOTALL | re.IGNORECASE)
     match = pattern.search(text)
     print(text)
+
+
+
+    tt = text.split("\n")
+
+    # Initialize session state for number of rows
+    if "num_rows" not in st.session_state:
+        st.session_state.num_rows = 1  # Start with 1 row
+
+    # Define the list of attributes for Column 1
+    tttt = ["A", "B", "C", "D"]
+
+    # Define the list of attribute items for Column 2 (Example Data)
+
+    st.write("### Dynamic Multi-Select Table")
+
+    # Function to exclude words, find the next first word and extract text between exclusions
+    def process_text(selected_text, next_text, row_index, text):
+        words = selected_text.split(" ")  # Split text into words
+        excluded_words = st.multiselect(f"Select words to exclude (Row {row_index+1}):", words, key=f"exclude_{row_index}_{selected_text}")
+
+        if excluded_words:
+            # Join the excluded words into a phrase
+            excluded_phrase = " ".join(excluded_words)
+
+            # Find the first word of the next attribute item
+            next_first_word = next_text.split(" ")[0] if next_text else None
+
+            # Regex to find everything between excluded phrase and next first word
+            if next_first_word:
+                pattern = rf"{re.escape(excluded_phrase)}\s+(.*?)\s+{re.escape(next_first_word)}"
+                match = re.search(pattern, text)
+                if match:
+                    text_between = match.group(1)  # Extract text between the exclusions and the next word
+                else:
+                    text_between = "No text found between exclusions and next first word"
+            else:
+                text_between = "Next attribute not available"
+
+            return excluded_phrase, text_between, next_first_word
+        return None, None, None
+    
+
+    # Display existing rows
+    for i in range(st.session_state.num_rows):
+        col1, col2 = st.columns(2)
+
+        with col1:
+            attribute = st.multiselect(f"Attribute (Row {i+1}):", tttt, key=f"col1_{i}")
+
+        with col2:
+            selected_col2 = st.multiselect(f"Select Attribute Item (Row {i+1}):", tt, key=f"col2_{i}")
+            selected_indices = [tt.index(item) for item in selected_col2]
+
+            if selected_col2:
+                for idx, item in enumerate(selected_col2):
+                    # Get the next attribute item in the list
+                    next_item = tt[selected_indices[0] + 1] if selected_indices[0] + 1 < len(tt) else None
+                    excluded_phrase, text_between, next_first_word = process_text(item, next_item, i, text)
+                    if excluded_phrase:
+                        st.write(f"**Excluded Words:** {excluded_phrase}")
+                        st.write(f"**Text Between Excluded Words and Next First Word:** {text_between}")
+                        st.write(f"**First Word of Next Item:** {next_first_word}")
+
+    # Button to add a new row
+    if st.button("Add Row"):
+        st.session_state.num_rows += 1
+        st.rerun()  # Refresh the app to show the new row
+
+    csv_file = "saved_data.csv"
+    fieldnames = ["Excluded Words", "Next Word"]
+
+    if st.button(f"Save Row {i+1} to CSV"):
+                            with open(csv_file, mode="a", newline="") as f:
+                                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                                writer.writerow({"Excluded Words": excluded_phrase, "Next Word": next_first_word})
+                                st.success(f"Row {i+1} saved to CSV.")
+
+
 
     if match:
         extracted_text = match.group(1).strip()
