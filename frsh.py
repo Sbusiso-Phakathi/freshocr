@@ -553,7 +553,6 @@ def extract_bkb_data(text, start, end):
                                 st.success(f"Row {i+1} saved to CSV.")
 
 
-
     if match:
         extracted_text = match.group(1).strip()
         item_pattern = re.compile(r'([A-Za-z0-9\s]+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)', re.IGNORECASE)
