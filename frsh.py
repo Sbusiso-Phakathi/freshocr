@@ -487,6 +487,7 @@ def extract_bkb_data(text, start, end):
 
     st.write("### Dynamic Multi-Select Table")
 
+
     # Function to exclude words, find the next first word and extract text between exclusions
     def process_text(selected_text, next_text, row_index, text):
         words = selected_text.split(" ")  # Split text into words
@@ -534,11 +535,20 @@ def extract_bkb_data(text, start, end):
                         st.write(f"**Excluded Words:** {excluded_phrase}")
                         st.write(f"**Text Between Excluded Words and Next First Word:** {text_between}")
                         st.write(f"**First Word of Next Item:** {next_first_word}")
+                csv_file = "saved_data.csv"
+                fieldnames = ["Excluded Words", "Next Word"]
+
+                if st.button(f"Save Row {i+1} to CSV", key=i):
+                                        with open(csv_file, mode="a", newline="") as f:
+                                            writer = csv.DictWriter(f, fieldnames=fieldnames)
+                                            writer.writerow({"Excluded Words": excluded_phrase, "Next Word": next_first_word})
+                                            st.success(f"Row {i+1} saved to CSV.")
 
     # Button to add a new row
     if st.button("Add Row"):
         st.session_state.num_rows += 1
         st.rerun()  # Refresh the app to show the new row
+    st.write(process_text('VAT Reg No. 4140101330', "Reg.", 7, text))
 
     csv_file = "saved_data.csv"
     fieldnames = ["Excluded Words", "Next Word"]
