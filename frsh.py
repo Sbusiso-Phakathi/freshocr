@@ -298,20 +298,21 @@ def extract_afgri_data(text, start, end):
                         st.write(f"**Excluded Words:** {excluded_phrase}")
                         st.write(f"**Text Between Excluded Words and Next First Word:** {text_between}")
                         st.write(f"**First Word of Next Item:** {next_first_word}")
+            csv_file = "saved_data.csv"
+            fieldnames = ["Excluded Words", "Next Word"]
+
+            if st.button(f"Save Row {i+1} to CSV"):
+                                    with open(csv_file, mode="a", newline="") as f:
+                                        writer = csv.DictWriter(f, fieldnames=fieldnames)
+                                        writer.writerow({"Excluded Words": excluded_phrase, "Next Word": next_first_word})
+                                        st.success(f"Row {i+1} saved to CSV.")
 
     # Button to add a new row
     if st.button("Add Row"):
         st.session_state.num_rows += 1
         st.rerun()  # Refresh the app to show the new row
 
-    csv_file = "saved_data.csv"
-    fieldnames = ["Excluded Words", "Next Word"]
-
-    if st.button(f"Save Row {i+1} to CSV"):
-                            with open(csv_file, mode="a", newline="") as f:
-                                writer = csv.DictWriter(f, fieldnames=fieldnames)
-                                writer.writerow({"Excluded Words": excluded_phrase, "Next Word": next_first_word})
-                                st.success(f"Row {i+1} saved to CSV.")
+   
 
 
 
