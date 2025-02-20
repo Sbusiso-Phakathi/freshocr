@@ -277,6 +277,27 @@ def extract_afgri_data(text, start, end):
             return excluded_phrase, text_between, next_first_word
         return None, None, None
     
+    def process_text2(num):
+        data = pd.read_csv("saved_data.csv")
+
+        if num:
+            excluded_phrase = data['Excluded Words'][num]
+            next_first_word = data['Next Word'][num]
+            print(data)
+            if next_first_word:
+                pattern = rf"{re.escape(excluded_phrase)}\s+(.*?)\s+{re.escape(next_first_word)}"
+                match = re.search(pattern, text)
+                if match:
+                    text_between = match.group(1) 
+                else:
+                    text_between = "No text found between exclusions and next first word"
+            else:
+                text_between = "Next attribute not available"
+
+            return  ( "invoice " + text_between)
+        return None, None, None
+
+    st.write(process_text2(0))
 
     # Display existing rows
     for i in range(st.session_state.num_rows):
