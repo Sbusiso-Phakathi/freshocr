@@ -485,8 +485,6 @@ def extract_bkb_data(text, start, end):
     tt = (" ").join(text.split("\n"))
     tt = tt.split(" ")
 
-
-
     # Initialize session state for number of rows
     if "num_rows" not in st.session_state:
         st.session_state.num_rows = 1  # Start with 1 row
@@ -818,5 +816,5 @@ if uploaded_files:
             # Download as CSV
             csv = final_df.to_csv(index=False).encode("utf-8")
             st.download_button(label="Download CSV", data=csv, file_name="extracted_data.csv", mime="text/csv")
-            
+
 #Letsgetgreatdevdone
