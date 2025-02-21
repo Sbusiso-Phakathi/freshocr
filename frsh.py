@@ -224,18 +224,9 @@ def extract_afgri_data(text, start, end):
 
     pattern = re.compile(rf'{re.escape(start)}\s*\n(.*?)\n\s*{re.escape(end)}', re.DOTALL | re.IGNORECASE)
     match = pattern.search(text)
-    tt = text.split("\n")
-
-    # col1, col2 = st.columns(2)
-    # with col1:
-    #     st.multiselect("select item: ", tt)
-    # with col2:
-    #     st.multiselect("select item: ", ["A","B","C"])
-
-
-    # Initialize session state for number of rows
-
-
+    # tt = text.split(" ")
+    tt = (" ").join(text.split("\n"))
+    tt = tt.split(" ")
 
 
     import re, csv
@@ -252,20 +243,18 @@ def extract_afgri_data(text, start, end):
     st.write("### Dynamic Multi-Select Table")
 
     # Function to exclude words, find the next first word and extract text between exclusions
-    def process_text(selected_text, next_text, row_index, text):
-        words = selected_text.split(" ")  # Split text into words
-        excluded_words = st.multiselect(f"Select words to exclude (Row {row_index+1}):", words, key=f"exclude_{row_index}_{selected_text}")
+    def process_text(selected_text, next_text, r1,r2, text):
+        tt = (" ").join(text.split("\n"))
+        tt = tt.split(" ")
+        selected_text = tt[r1]
+        next_text = tt[r2]
 
-        if excluded_words:
-            # Join the excluded words into a phrase
-            excluded_phrase = " ".join(excluded_words)
-
-            # Find the first word of the next attribute item
-            next_first_word = next_text.split(" ")[0] if next_text else None
-
+        xx = tt[r1+1:r2]
+        result = " ".join(xx)
+        if result:
             # Regex to find everything between excluded phrase and next first word
-            if next_first_word:
-                pattern = rf"{re.escape(excluded_phrase)}\s+(.*?)\s+{re.escape(next_first_word)}"
+            if selected_text:
+                pattern = rf"{re.escape(selected_text)}\s+(.*?)\s+{re.escape(next_text)}"
                 match = re.search(pattern, text)
                 if match:
                     text_between = match.group(1)  # Extract text between the exclusions and the next word
@@ -274,30 +263,29 @@ def extract_afgri_data(text, start, end):
             else:
                 text_between = "Next attribute not available"
 
-            return excluded_phrase, text_between, next_first_word
+            return selected_text, result, next_text
         return None, None, None
     
-    def process_text2(num):
-        data = pd.read_csv("saved_data.csv")
+    def process_text2(num, text):
+        tt = (" ").join(text.split("\n"))
+        tt = tt.split(" ")
+        data = pd.read_csv("sasa.csv")
+        
 
-        if num:
+        if 1==1:
             excluded_phrase = data['Excluded Words'][num]
-            next_first_word = data['Next Word'][num]
-            print(data)
-            if next_first_word:
-                pattern = rf"{re.escape(excluded_phrase)}\s+(.*?)\s+{re.escape(next_first_word)}"
-                match = re.search(pattern, text)
-                if match:
-                    text_between = match.group(1) 
-                else:
-                    text_between = "No text found between exclusions and next first word"
-            else:
-                text_between = "Next attribute not available"
+            ex = tt.index(excluded_phrase)
 
-            return  ( "invoice " + text_between)
+            next_first_word = data['Next Word'][num]
+            ne = tt.index(next_first_word)
+
+            xx = tt[ex+1:ne]
+            result = " ".join(xx)
+
+            return  ( "invoice " + result)
         return None, None, None
 
-    st.write(process_text2(0))
+   
 
     # Display existing rows
     for i in range(st.session_state.num_rows):
@@ -307,26 +295,22 @@ def extract_afgri_data(text, start, end):
             attribute = st.multiselect(f"Attribute (Row {i+1}):", tttt, key=f"col1_{i}")
 
         with col2:
-            selected_col2 = st.multiselect(f"Select Attribute Item (Row {i+1}):", tt, key=f"col2_{i}")
-            selected_indices = [tt.index(item) for item in selected_col2]
+            selected_col2 = st.selectbox(f"Select Attribute Item (Row {i+1}):", tt, key=f"col2_{i}")
+            selected_indices1 = tt.index(selected_col2)
 
-            if selected_col2:
-                for idx, item in enumerate(selected_col2):
-                    # Get the next attribute item in the list
-                    next_item = tt[selected_indices[0] + 1] if selected_indices[0] + 1 < len(tt) else None
-                    excluded_phrase, text_between, next_first_word = process_text(item, next_item, i, text)
-                    if excluded_phrase:
+            next_item = st.selectbox(f"Select Attribute Item ", tt, key=f"col22_{i}")
+            selected_indices2 = tt.index(next_item)
+
+
+            excluded_phrase, text_between, next_first_word = process_text(selected_col2, next_item, selected_indices1, selected_indices2, text)
+            if excluded_phrase:
                         st.write(f"**Excluded Words:** {excluded_phrase}")
                         st.write(f"**Text Between Excluded Words and Next First Word:** {text_between}")
                         st.write(f"**First Word of Next Item:** {next_first_word}")
-            csv_file = "saved_data.csv"
-            fieldnames = ["Excluded Words", "Next Word"]
 
             if st.button(f"Save Row {i+1} to CSV"):
-                                    with open(csv_file, mode="a", newline="") as f:
-                                        writer = csv.DictWriter(f, fieldnames=fieldnames)
-                                        writer.writerow({"Excluded Words": excluded_phrase, "Next Word": next_first_word})
-                                        st.success(f"Row {i+1} saved to CSV.")
+                df = pd.DataFrame({"Excluded Words": [excluded_phrase], "Next Word": [next_first_word]})
+                df.to_csv("sasa.csv", mode="a", index=True)
 
     # Button to add a new row
     if st.button("Add Row"):
@@ -482,10 +466,13 @@ def extract_afgri_data(text, start, end):
                 commodity = " ".join(b.split(" ")[:2])
 
                 data.append([b, c, d, e, f, g, grade, silo, crop, commodity, invoice_number, doc_date, acc_num])
+                for ij in range(5):
+                     st.write(process_text2(ij, text), key=f"hell{ij}")
 
         return pd.DataFrame(data, columns=["Description", "Quantity", "Unit Price", "Total (Excl.)", "VAT", "Total (Incl.)", "Grade", "Cost Type", "Crop", "Commodity", "invnum","doc_date", "acc_num"])
-
+        
     return pd.DataFrame()
+    
 
 # Function to extract structured data for BKB format
 def extract_bkb_data(text, start, end):
@@ -495,8 +482,10 @@ def extract_bkb_data(text, start, end):
     print(text)
 
 
+    tt = (" ").join(text.split("\n"))
+    tt = tt.split(" ")
 
-    tt = text.split("\n")
+
 
     # Initialize session state for number of rows
     if "num_rows" not in st.session_state:
@@ -509,22 +498,19 @@ def extract_bkb_data(text, start, end):
 
     st.write("### Dynamic Multi-Select Table")
 
-
     # Function to exclude words, find the next first word and extract text between exclusions
-    def process_text(selected_text, next_text, row_index, text):
-        words = selected_text.split(" ")  # Split text into words
-        excluded_words = st.multiselect(f"Select words to exclude (Row {row_index+1}):", words, key=f"exclude_{row_index}_{selected_text}")
+    def process_text(selected_text, next_text, r1,r2, text):
+        tt = (" ").join(text.split("\n"))
+        tt = tt.split(" ")
+        selected_text = tt[r1]
+        next_text = tt[r2]
 
-        if excluded_words:
-            # Join the excluded words into a phrase
-            excluded_phrase = " ".join(excluded_words)
-
-            # Find the first word of the next attribute item
-            next_first_word = next_text.split(" ")[0] if next_text else None
-
+        xx = tt[r1+1:r2]
+        result = " ".join(xx)
+        if result:
             # Regex to find everything between excluded phrase and next first word
-            if next_first_word:
-                pattern = rf"{re.escape(excluded_phrase)}\s+(.*?)\s+{re.escape(next_first_word)}"
+            if selected_text:
+                pattern = rf"{re.escape(selected_text)}\s+(.*?)\s+{re.escape(next_text)}"
                 match = re.search(pattern, text)
                 if match:
                     text_between = match.group(1)  # Extract text between the exclusions and the next word
@@ -533,9 +519,35 @@ def extract_bkb_data(text, start, end):
             else:
                 text_between = "Next attribute not available"
 
-            return excluded_phrase, text_between, next_first_word
+            return selected_text, result, next_text
         return None, None, None
     
+    def process_text2(num, text):
+        tt = (" ").join(text.split("\n"))
+        tt = tt.split(" ")
+        data = pd.read_csv("sasa.csv")
+        
+
+        if 1==1:
+            excluded_phrase = data['Excluded Words'][num]
+            ex = tt.index(excluded_phrase)
+
+            next_first_word = data['Next Word'][num]
+            ne = tt.index(next_first_word)
+
+            attribute = data['Attribute'][num]
+
+            xx = tt[ex+1:ne]
+            result = " ".join(xx)
+
+            return  ( attribute + ": " + result )
+        return None, None, None
+    
+    data = pd.read_csv("sasa.csv")
+    dd = data[data['Company'] == "bkb"]
+
+    for ij in list(dd.index):
+        st.write(process_text2(ij, text), key=f"hell{ij}")
 
     # Display existing rows
     for i in range(st.session_state.num_rows):
@@ -545,41 +557,47 @@ def extract_bkb_data(text, start, end):
             attribute = st.multiselect(f"Attribute (Row {i+1}):", tttt, key=f"col1_{i}")
 
         with col2:
-            selected_col2 = st.multiselect(f"Select Attribute Item (Row {i+1}):", tt, key=f"col2_{i}")
-            selected_indices = [tt.index(item) for item in selected_col2]
+            selected_col2 = st.selectbox(f"Select Attribute Item (Row {i+1}):", tt, key=f"col2_{i}")
+            selected_indices1 = tt.index(selected_col2)
 
-            if selected_indices:
-                for idx, item in enumerate(selected_col2):
-                    # Get the next attribute item in the list
-                    next_item = tt[selected_indices[0] + 1] if selected_indices[0] + 1 < len(tt) else None
-                    excluded_phrase, text_between, next_first_word = process_text(item, next_item, i, text)
-                    if excluded_phrase:
+            next_item = st.selectbox(f"Select Attribute Item ", tt, key=f"col22_{i}")
+            selected_indices2 = tt.index(next_item)
+
+
+            excluded_phrase, text_between, next_first_word = process_text(selected_col2, next_item, selected_indices1, selected_indices2, text)
+            if excluded_phrase:
                         st.write(f"**Excluded Words:** {excluded_phrase}")
                         st.write(f"**Text Between Excluded Words and Next First Word:** {text_between}")
                         st.write(f"**First Word of Next Item:** {next_first_word}")
-                csv_file = "saved_data.csv"
-                fieldnames = ["Excluded Words", "Next Word"]
 
-                if st.button(f"Save Row {i+1} to CSV", key=i):
-                                        with open(csv_file, mode="a", newline="") as f:
-                                            writer = csv.DictWriter(f, fieldnames=fieldnames)
-                                            writer.writerow({"Excluded Words": excluded_phrase, "Next Word": next_first_word})
-                                            st.success(f"Row {i+1} saved to CSV.")
+            if st.button(f"Save Row {i+1} to CSV"):
+      
+                df = pd.DataFrame({"Excluded Words": [excluded_phrase], "Next Word": [next_first_word], "Company": ["bkb"], "Attribute": attribute})
+
+                # File path
+                file_path = "sasa.csv"
+
+                # Check if the CSV file already exists
+                try:
+                    existing_df = pd.read_csv(file_path)
+                except FileNotFoundError:
+                    existing_df = pd.DataFrame(columns=["Excluded Words", "Next Word", "Company"])
+
+                # Avoid duplicates by checking if the row already exists
+                if not ((existing_df["Excluded Words"] == excluded_phrase) & 
+                        (existing_df["Next Word"] == next_first_word) & 
+                        (existing_df["Company"] == "bkb")).any():
+                    # Append the new row to the CSV without the header
+                    df.to_csv(file_path, mode='a', header=False, index=True)
+                else:
+                    print("Duplicate row not added.")
+
 
     # Button to add a new row
     if st.button("Add Row"):
         st.session_state.num_rows += 1
         st.rerun()  # Refresh the app to show the new row
-    st.write(process_text('VAT Reg No. 4140101330', "Reg.", 7, text))
 
-    csv_file = "saved_data.csv"
-    fieldnames = ["Excluded Words", "Next Word"]
-
-    if st.button(f"Save Row {i+1} to CSV"):
-                            with open(csv_file, mode="a", newline="") as f:
-                                writer = csv.DictWriter(f, fieldnames=fieldnames)
-                                writer.writerow({"Excluded Words": excluded_phrase, "Next Word": next_first_word})
-                                st.success(f"Row {i+1} saved to CSV.")
 
 
     if match:
@@ -609,8 +627,129 @@ def extract_bkb_data(text, start, end):
     return pd.DataFrame()
 
 def extract_overberg_data(text, start, end):
+    import re, csv
+
     pattern = re.compile(rf'{re.escape(start)}\s*\n(.*?)\n\s*{re.escape(end)}', re.DOTALL | re.IGNORECASE)
     match = pattern.search(text)
+
+
+
+    tt = (" ").join(text.split("\n"))
+    tt = tt.split(" ")
+
+
+
+    # Initialize session state for number of rows
+    if "num_rows" not in st.session_state:
+        st.session_state.num_rows = 1  # Start with 1 row
+
+    # Define the list of attributes for Column 1
+    tttt = ["A", "B", "C", "D"]
+
+    # Define the list of attribute items for Column 2 (Example Data)
+
+    st.write("### Dynamic Multi-Select Table")
+
+    # Function to exclude words, find the next first word and extract text between exclusions
+    def process_text(selected_text, next_text, r1,r2, text):
+        tt = (" ").join(text.split("\n"))
+        tt = tt.split(" ")
+        selected_text = tt[r1]
+        next_text = tt[r2]
+
+        xx = tt[r1+1:r2]
+        result = " ".join(xx)
+        if result:
+            # Regex to find everything between excluded phrase and next first word
+            if selected_text:
+                pattern = rf"{re.escape(selected_text)}\s+(.*?)\s+{re.escape(next_text)}"
+                match = re.search(pattern, text)
+                if match:
+                    text_between = match.group(1)  # Extract text between the exclusions and the next word
+                else:
+                    text_between = "No text found between exclusions and next first word"
+            else:
+                text_between = "Next attribute not available"
+
+            return selected_text, result, next_text
+        return None, None, None
+    
+    def process_text2(num, text):
+        tt = (" ").join(text.split("\n"))
+        tt = tt.split(" ")
+        data = pd.read_csv("sasa.csv")
+        
+
+        if 1==1:
+            excluded_phrase = data['Excluded Words'][num]
+            ex = tt.index(excluded_phrase)
+
+            next_first_word = data['Next Word'][num]
+            ne = tt.index(next_first_word)
+
+            attribute = data['Attribute'][num]
+
+            xx = tt[ex+1:ne]
+            result = " ".join(xx)
+
+            return  ( attribute + ": " + result )
+        return None, None, None
+    
+    data = pd.read_csv("sasa.csv")
+    dd = data[data['Company'] == "overberg"]
+
+    for ij in list(dd.index):
+        st.write(process_text2(ij, text), key=f"hell{ij}")
+
+    # Display existing rows
+    for i in range(st.session_state.num_rows):
+        col1, col2 = st.columns(2)
+
+        with col1:
+            attribute = st.multiselect(f"Attribute (Row {i+1}):", tttt, key=f"col1_{i}")
+
+        with col2:
+            selected_col2 = st.selectbox(f"Select Attribute Item (Row {i+1}):", tt, key=f"col2_{i}")
+            selected_indices1 = tt.index(selected_col2)
+
+            next_item = st.selectbox(f"Select Attribute Item ", tt, key=f"col22_{i}")
+            selected_indices2 = tt.index(next_item)
+
+
+            excluded_phrase, text_between, next_first_word = process_text(selected_col2, next_item, selected_indices1, selected_indices2, text)
+            if excluded_phrase:
+                        st.write(f"**Excluded Words:** {excluded_phrase}")
+                        st.write(f"**Text Between Excluded Words and Next First Word:** {text_between}")
+                        st.write(f"**First Word of Next Item:** {next_first_word}")
+
+            if st.button(f"Save Row {i+1} to CSV"):
+      
+                df = pd.DataFrame({"Excluded Words": [excluded_phrase], "Next Word": [next_first_word], "Company": ["overberg"], "Attribute": attribute})
+
+                # File path
+                file_path = "sasa.csv"
+
+                # Check if the CSV file already exists
+                try:
+                    existing_df = pd.read_csv(file_path)
+                except FileNotFoundError:
+                    existing_df = pd.DataFrame(columns=["Excluded Words", "Next Word", "Company"])
+
+                # Avoid duplicates by checking if the row already exists
+                if not ((existing_df["Excluded Words"] == excluded_phrase) & 
+                        (existing_df["Next Word"] == next_first_word) & 
+                        (existing_df["Company"] == "overberg")).any():
+                    # Append the new row to the CSV without the header
+                    df.to_csv(file_path, mode='a', header=False, index=True)
+                else:
+                    print("Duplicate row not added.")
+
+
+    # Button to add a new row
+    if st.button("Add Row"):
+        st.session_state.num_rows += 1
+        st.rerun()  # Refresh the app to show the new row
+
 
     if match:
         extracted_text = match.group(1).strip()
@@ -627,7 +766,7 @@ def extract_overberg_data(text, start, end):
                 print(match.group(3))
         
                 # print(match.groups())
-                a, b, c, d,t,y = match.groups()
+                a, b, c, d = match.groups()
                 data.append([None, a, None, None, None, None, b, c, d])
             else:
                 charge_match = re.match(r'(\d{1,3}(?:[ ,]?\d{3})*(?:\.\d+)?)\s+(\d+)\s+([A-Za-z0-9\s\-]+)\s+([\d,.]+)\s+(\d{1,3}(?:[ ,]?\d{3})*(?:\.\d+)?)\s+(\d{1,3}(?:[ ,]?\d{3})*(?:\.\d+)?)', line)
