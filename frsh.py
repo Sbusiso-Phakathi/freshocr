@@ -42,17 +42,6 @@ def extract_afgri_data(text, start, end):
         xx = tt[r1+1:r2]
         result = " ".join(xx)
         if result:
-            # Regex to find everything between excluded phrase and next first word
-            if selected_text:
-                pattern = rf"{re.escape(selected_text)}\s+(.*?)\s+{re.escape(next_text)}"
-                match = re.search(pattern, text)
-                if match:
-                    text_between = match.group(1)  # Extract text between the exclusions and the next word
-                else:
-                    text_between = "No text found between exclusions and next first word"
-            else:
-                text_between = "Next attribute not available"
-
             return selected_text, result, next_text
         return None, None, None
     
