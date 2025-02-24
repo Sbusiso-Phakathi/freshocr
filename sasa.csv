@@ -1,16 +1,4 @@
-,Excluded Words,Next Word,Company,Attribute
-0,TEL:,GRAINCO,bkb,A
-0,8900,FAX:,bkb,A
-0,No.:,VAT,bkb,A
-0,No.,Reg.,bkb,A
-0,INVOICE,Sales,bkb,A
-
-
-0,Copy,HEAD,overberg,[]
-0,No:,PO,overberg,[]
-0,:,KLERKSDORP,overberg,[]
-
-0,no.,Plant,overberg,[]
-0,G240,Name:,overberg,[]
-0,Name:,488,overberg,[]
-0,LIMITED,MLi,afgri,B
+,Excluded Words,Next Word,Company,Attribute,start,end
+0,No:,South,afgri,A,65,67
+0,name:,Account,afgri,B,53,55
+0,Statement,Main,afgri,B,92,94
