@@ -3,13 +3,11 @@ import pdfplumber
 import re
 import pandas as pd
 
-# Function to extract text from a single PDF file
 def extract_text_from_pdf(pdf_file):
     with pdfplumber.open(pdf_file) as pdf:
         text = "\n".join([page.extract_text() or "" for page in pdf.pages])
     return text
 
-# Function to extract structured data for AFGRI format
 def extract_afgri_data(text, start, end):
     import re
 
@@ -19,20 +17,16 @@ def extract_afgri_data(text, start, end):
     tt = (" ").join(text.split("\n"))
     tt = tt.split(" ")
 
-    # Initialize session state for number of rows
     if "num_rows" not in st.session_state:
         st.session_state.num_rows = 1  # Start with 1 row
 
-    # Define the list of attributes for Column 1
     tttt = ["A", "B", "C", "D"]
     ttx = []
     for index, i in enumerate(tt):
-        ttx.append(i+str(index))
-    # Define the list of attribute items for Column 2 (Example Data)
+        ttx.append(i)
 
     st.write("### Dynamic Multi-Select Table")
 
-    # Function to exclude words, find the next first word and extract text between exclusions
     def process_text(selected_text, next_text, r1,r2, text):
         tt = (" ").join(text.split("\n"))
         tt = tt.split(" ")
@@ -45,15 +39,36 @@ def extract_afgri_data(text, start, end):
             return selected_text, result, next_text
         return None, None, None
     
+    def generate_regex_from_string(s):
+            # Replace spaces with a single space match
+            s = s.replace(" ", r"\s*")
+
+            # Match digits
+            s = re.sub(r'\d+', r'\\d+', s)
+
+            # Match letters (upper and lower case)
+            s = re.sub(r'[a-zA-Z]+', r'[a-zA-Z]+', s)
+
+            # Match any special characters literally
+            s = re.sub(r'[\W_]+', lambda m: '\\' + m.group(0), s)
+
+            return "^" + s + "$"
+
+        # Example usage
+       
+
     def process_text2(num, start, end, text):
-        tt = (" ").join(text.split("\n"))
-        tt = tt.split(" ")
+        ttx = []
+        for index, i in enumerate(tt):
+            ttx.append(i+str(index))
+        # tt = (" ").join(text.split("\n"))
+        # tt = tt.split(" ")
         data = pd.read_csv("sasa.csv")
         
         if 1==1:
             attribute = data['Attribute'][num]
 
-            xx = tt[start+1:end]
+            xx = ttx[start+1:end]
             result = " ".join(xx)
 
             return  ( attribute + ": " + result )
@@ -61,10 +76,12 @@ def extract_afgri_data(text, start, end):
     
     data = pd.read_csv("sasa.csv")
     dd = data[data['Company'] == "afgri"]
-    
+    dcc = []
     for ij in list(dd.index):
         start = dd['start'][ij]
         end = dd['end'][ij]
+        dx = process_text2(ij,start, end, text)
+        dcc.append(dx)
         st.write(process_text2(ij,start, end, text), key=f"hell{ij}")
 
     # Display existing rows
@@ -77,12 +94,12 @@ def extract_afgri_data(text, start, end):
             attribute = st.multiselect(f"Attribute (Row {i+1}):", tttt, key=f"col1_{i}")
 
         with col2:
+
             selected_col2 = st.selectbox(f"Select Attribute Item (Row {i+1}):", ttx, key=f"col2_{i}")
             selected_indices1 = ttx.index(selected_col2)
 
             next_item = st.selectbox(f"Select Attribute Item ", ttx, key=f"col22_{i}")
-            selected_indices2 = ttx.index(next_item)
-
+            selected_indices2 = ttx.index(next_item)    
 
             excluded_phrase, text_between, next_first_word = process_text(selected_col2[:-1], next_item[:-1], selected_indices1, selected_indices2, text)
             if excluded_phrase:
@@ -92,26 +109,28 @@ def extract_afgri_data(text, start, end):
 
             if st.button(f"Save Row {i+1} to CSV"):
       
-                df = pd.DataFrame({"Excluded Words": [excluded_phrase], "Next Word": [next_first_word], "Company": ["afgri"], "Attribute": attribute, "start": selected_indices1, "end":selected_indices2})
+                df = pd.DataFrame({"Excluded Words": [selected_col2], "Next Word": [next_item], "Company": ["afgri"], "Attribute": attribute, "start": selected_indices1, "end":selected_indices2})
 
-                # File path
                 file_path = "sasa.csv"
 
-                # Check if the CSV file already exists
                 try:
                     existing_df = pd.read_csv(file_path)
                 except FileNotFoundError:
                     existing_df = pd.DataFrame(columns=["Excluded Words", "Next Word", "Company"])
 
-                # Avoid duplicates by checking if the row already exists
                 if not ((existing_df["Excluded Words"] == excluded_phrase) & 
                         (existing_df["Next Word"] == next_first_word) & 
                         (existing_df["Company"] == "afgri")).any():
-                    # Append the new row to the CSV without the header
+
                     df.to_csv(file_path, mode='a', header=False, index=True)
                 else:
                     print("Duplicate row not added.")
-
+    for ij in list(dd.index):
+            start = ttx.index(selected_col2)
+            end = ttx.index(next_item)
+            dx = process_text2(ij,start, end, text)
+            dcc.append(dx)
+            st.write(process_text2(ij,start, end, text), key=f"hell{ij}")
 
     # Button to add a new row
     if st.button("Add Row"):
@@ -129,10 +148,15 @@ def extract_afgri_data(text, start, end):
         
 
         for line in extracted_text.split("\n"):
+            regex_pattern = generate_regex_from_string(line)
+            item_pattern = re.compile(r'(\d+)\s+([A-Za-z0-9\s\-]+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)', re.IGNORECASE)
+
            
             match = item_pattern.match(line)
 
             if match:
+                print(str(match.groups()) + str(dcc))
+
                 # print(match.groups())
                 a, b, c, d, e, f, g = match.groups()
 
@@ -152,8 +176,8 @@ def extract_afgri_data(text, start, end):
                 commodity = " ".join(b.split(" ")[:2])
 
                 data.append([b, c, d, e, f, g, grade, silo, crop, commodity, invoice_number, doc_date, acc_num])
-                for ij in range(5):
-                     st.write(process_text2(ij, text), key=f"hell{ij}")
+                # for ij in range(5):
+                #      st.write(process_text2(ij, text), key=f"hell{ij}")
 
         return pd.DataFrame(data, columns=["Description", "Quantity", "Unit Price", "Total (Excl.)", "VAT", "Total (Incl.)", "Grade", "Cost Type", "Crop", "Commodity", "invnum","doc_date", "acc_num"])
         
